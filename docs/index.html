@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Análise Exploratória de Dados da base Adult Income Census, com PCA e pipeline de pré-processamento.">
+  <title>Adult Income EDA | Insper</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --paper: #ffffff;
+      --surface: #f5f7fb;
+      --line: #dfe5ee;
+      --accent: #d7194a;
+      --accent-dark: #a90f37;
+      --blue: #315f88;
+      --green: #24866a;
+      --orange: #db7c26;
+      --shadow: 0 14px 40px rgba(23, 32, 51, 0.09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: var(--accent-dark); }
+    a:hover { color: var(--accent); }
+    code {
+      padding: .12rem .35rem;
+      border-radius: 6px;
+      background: #edf1f7;
+      font-size: .92em;
+    }
+
+    .container { width: min(1120px, calc(100% - 40px)); margin-inline: auto; }
+    .skip-link { position: absolute; left: -9999px; }
+    .skip-link:focus { left: 12px; top: 12px; z-index: 20; background: white; padding: 8px 12px; }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid rgba(223, 229, 238, .9);
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      min-height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand { font-weight: 800; color: var(--ink); text-decoration: none; letter-spacing: -.02em; }
+    .brand span { color: var(--accent); }
+    .nav-links { display: flex; flex-wrap: wrap; gap: 18px; font-size: .92rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 650; }
+    .nav-links a:hover { color: var(--accent); }
+
+    .hero {
+      overflow: hidden;
+      position: relative;
+      padding: 92px 0 78px;
+      background:
+        radial-gradient(circle at 82% 28%, rgba(215, 25, 74, .18), transparent 26%),
+        radial-gradient(circle at 72% 82%, rgba(49, 95, 136, .16), transparent 26%),
+        linear-gradient(135deg, #121a2b 0%, #202d46 100%);
+      color: white;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -160px;
+      bottom: -220px;
+      border: 64px solid rgba(255,255,255,.04);
+      border-radius: 50%;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 6px 11px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff4d79; }
+    h1 { max-width: 790px; margin: 0; font-size: clamp(2.6rem, 6vw, 5.2rem); line-height: 1.02; letter-spacing: -.055em; }
+    .hero p { max-width: 720px; margin: 26px 0 0; color: #cfd7e6; font-size: 1.16rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 17px;
+      border: 1px solid rgba(255,255,255,.23);
+      border-radius: 10px;
+      color: white;
+      text-decoration: none;
+      font-weight: 750;
+    }
+    .button:hover { color: white; transform: translateY(-1px); }
+    .button.primary { border-color: var(--accent); background: var(--accent); }
+    .button.primary:hover { background: #eb2458; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 38px; color: #aeb9cb; font-size: .92rem; }
+
+    section { padding: 78px 0; }
+    section.alt { background: var(--surface); }
+    .section-label { margin: 0 0 8px; color: var(--accent); font-size: .8rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    h2 { margin: 0 0 16px; font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.12; letter-spacing: -.035em; }
+    h3 { margin: 0 0 8px; font-size: 1.13rem; line-height: 1.35; }
+    .lead { max-width: 800px; margin: 0 0 34px; color: var(--muted); font-size: 1.08rem; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .stat, .card, .chart, .note {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    .stat { padding: 24px; }
+    .stat strong { display: block; color: var(--accent); font-size: 2rem; line-height: 1.1; letter-spacing: -.04em; }
+    .stat span { display: block; margin-top: 8px; color: var(--muted); }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .card { padding: 25px; }
+    .card p { margin: 8px 0 0; color: var(--muted); }
+    .number {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 16px;
+      border-radius: 9px;
+      color: white;
+      background: var(--accent);
+      font-weight: 850;
+    }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+    th, td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #3d4858; background: #eef2f7; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+
+    .chart { padding: 25px; }
+    .chart + .chart { margin-top: 20px; }
+    .chart-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .chart-head p { margin: 3px 0 0; color: var(--muted); font-size: .92rem; }
+    .legend { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .bar-row { display: grid; grid-template-columns: minmax(105px, 170px) 1fr 62px; align-items: center; gap: 13px; margin: 13px 0; }
+    .bar-label { overflow: hidden; text-overflow: ellipsis; font-size: .91rem; white-space: nowrap; }
+    .track { height: 13px; overflow: hidden; border-radius: 999px; background: #e8edf4; }
+    .fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), #6c9bc2); }
+    .fill.accent { background: linear-gradient(90deg, var(--accent-dark), var(--accent)); }
+    .fill.green { background: linear-gradient(90deg, #17664f, var(--green)); }
+    .bar-value { color: #3f4b5c; font-variant-numeric: tabular-nums; font-weight: 750; text-align: right; }
+    .axis-note { margin: 16px 0 0; color: var(--muted); font-size: .82rem; text-align: right; }
+
+    .callout {
+      margin-top: 22px;
+      padding: 18px 20px;
+      border-left: 5px solid var(--accent);
+      border-radius: 9px;
+      color: #3f4b5c;
+      background: #fff1f5;
+    }
+    .callout strong { color: var(--ink); }
+
+    .pca-layout { display: grid; grid-template-columns: .8fr 1.2fr; align-items: center; gap: 34px; }
+    .donut {
+      display: grid;
+      place-items: center;
+      width: min(260px, 80vw);
+      aspect-ratio: 1;
+      margin-inline: auto;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0 68.7%, #e6ebf2 68.7% 100%);
+    }
+    .donut::after {
+      content: "68,7%\A variância preservada";
+      display: grid;
+      place-items: center;
+      width: 68%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      color: var(--ink);
+      background: white;
+      font-weight: 850;
+      text-align: center;
+      white-space: pre;
+    }
+    .component { margin-top: 15px; padding: 17px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+    .component strong { color: var(--accent); }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 26px;
+    }
+    .step { position: relative; padding: 17px 14px; border: 1px solid var(--line); border-radius: 12px; background: white; text-align: center; font-size: .9rem; font-weight: 750; }
+    .step:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; z-index: 2; transform: translateY(-50%); color: var(--accent); font-size: 1.25rem; }
+
+    .conclusion {
+      padding: 34px;
+      border-radius: var(--radius);
+      color: white;
+      background: linear-gradient(130deg, #172033, #293b5c);
+      box-shadow: var(--shadow);
+    }
+    .conclusion h3 { font-size: 1.45rem; }
+    .conclusion p { color: #d8deea; }
+    .conclusion ul { margin-bottom: 0; color: #eef2f8; }
+
+    footer { padding: 42px 0; border-top: 1px solid var(--line); color: var(--muted); background: #fafbfc; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 30px; }
+    .footer-inner p { margin: 0; }
+
+    @media (max-width: 860px) {
+      .nav-links { display: none; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr; }
+      .pca-layout { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -20px; transform: translateX(50%); }
+    }
+    @media (max-width: 650px) {
+      .container { width: min(100% - 26px, 1120px); }
+      .hero { padding: 70px 0 60px; }
+      section { padding: 58px 0; }
+      .stats, .grid-2 { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 96px 1fr 56px; gap: 8px; }
+      .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+  <nav aria-label="Navegação principal">
+    <div class="container nav-inner">
+      <a class="brand" href="#inicio">Adult Income <span>EDA</span></a>
+      <div class="nav-links">
+        <a href="#dados">Dados</a>
+        <a href="#qualidade">Qualidade</a>
+        <a href="#resultados">Resultados</a>
+        <a href="#pca">PCA</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#conclusoes">Conclusões</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="inicio">
+    <div class="container">
+      <div class="eyebrow">APS · Análise Exploratória de Dados</div>
+      <h1>O que os dados revelam sobre renda anual?</h1>
+      <p>Uma análise reproduzível da base Adult Income Census: qualidade dos dados, distribuições, relações com a renda, redução de dimensionalidade e preparação para modelagem.</p>
+      <div class="actions">
+        <a class="button primary" href="https://colab.research.google.com/github/GabrielRosa1/adult-income-eda/blob/main/APS_EDA.ipynb">Abrir no Google Colab</a>
+        <a class="button" href="https://github.com/GabrielRosa1/adult-income-eda/blob/main/APS_EDA.ipynb">Ver notebook</a>
+        <a class="button" href="https://github.com/GabrielRosa1/adult-income-eda">Repositório</a>
+      </div>
+      <div class="hero-meta">
+        <span>Gabriel Martins Rosa</span>
+        <span>João Pedro Baungartner</span>
+        <span>Insper · Ciência da Computação · 2025.1</span>
+        <span>Prof. Humberto Sandmann</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section id="dados">
+      <div class="container">
+        <p class="section-label">Visão geral</p>
+        <h2>Da inspeção à preparação dos dados</h2>
+        <p class="lead">A base reúne características demográficas, educacionais e profissionais. O target <code>income</code> identifica se a renda anual é de até ou acima de US$ 50 mil.</p>
+
+        <div class="stats">
+          <div class="stat"><strong>31.947</strong><span>registros originais</span></div>
+          <div class="stat"><strong>12</strong><span>colunas, incluindo o target</span></div>
+          <div class="stat"><strong>24,07%</strong><span>da classe <code>&gt;50K</code> após a limpeza</span></div>
+          <div class="stat"><strong>80/20</strong><span>divisão estratificada treino/teste</span></div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 24px">
+          <article class="card"><div class="number">1</div><h3>Entender</h3><p>Inspecionar o significado, o tipo e a distribuição de cada variável.</p></article>
+          <article class="card"><div class="number">2</div><h3>Investigar</h3><p>Identificar inconsistências, ausências, duplicatas, outliers e possíveis vieses.</p></article>
+          <article class="card"><div class="number">3</div><h3>Preparar</h3><p>Transformar os dados com um pipeline reutilizável sem vazamento entre treino e teste.</p></article>
+        </div>
+
+        <h3 style="margin-top: 38px">Dicionário resumido</h3>
+        <div class="table-wrap" style="margin-top: 14px">
+          <table>
+            <thead><tr><th>Variável</th><th>Tipo</th><th>Significado</th></tr></thead>
+            <tbody>
+              <tr><td><code>age</code></td><td>Numérica</td><td>Idade da pessoa.</td></tr>
+              <tr><td><code>workclass</code></td><td>Categórica</td><td>Categoria de vínculo ou setor de trabalho.</td></tr>
+              <tr><td><code>fnlwgt</code></td><td>Numérica</td><td>Peso amostral final; aproxima quantas pessoas da população o perfil representa.</td></tr>
+              <tr><td><code>education</code></td><td>Categórica</td><td>Nível de escolaridade em texto.</td></tr>
+              <tr><td><code>education_num</code></td><td>Numérica ordinal</td><td>Codificação ordenada do nível de escolaridade.</td></tr>
+              <tr><td><code>marital_status</code></td><td>Categórica</td><td>Estado civil.</td></tr>
+              <tr><td><code>occupation</code></td><td>Categórica</td><td>Grupo ocupacional.</td></tr>
+              <tr><td><code>relationship</code></td><td>Categórica</td><td>Papel familiar informado.</td></tr>
+              <tr><td><code>race</code></td><td>Categórica</td><td>Grupo racial registrado na base.</td></tr>
+              <tr><td><code>sex</code></td><td>Categórica</td><td>Sexo registrado na base.</td></tr>
+              <tr><td><code>native_country</code></td><td>Categórica</td><td>País de origem.</td></tr>
+              <tr><td><code>income</code></td><td>Target</td><td>Faixa de renda anual: <code>&lt;=50K</code> ou <code>&gt;50K</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin-top:16px;color:var(--muted)">Fonte: <a href="https://www.kaggle.com/datasets/anaghakp/adult-income-census">Adult Income Census — Kaggle</a>.</p>
+      </div>
+    </section>
+
+    <section class="alt" id="qualidade">
+      <div class="container">
+        <p class="section-label">Qualidade dos dados</p>
+        <h2>Ausências escondidas e inconsistências</h2>
+        <p class="lead">A ausência não aparecia como <code>NaN</code>: parte dos valores estava representada pelo caractere <code>?</code>, além do texto inválido <code>occupation</code> dentro da própria coluna de ocupação.</p>
+
+        <div class="grid-2">
+          <div class="chart">
+            <div class="chart-head"><div><h3>Valores ausentes após a padronização</h3><p>Percentual sobre a base original</p></div><span class="legend">máx. 10,16%</span></div>
+            <div class="bar-row"><span class="bar-label">occupation</span><span class="track"><span class="fill accent" style="display:block;width:100%"></span></span><span class="bar-value">10,16%</span></div>
+            <div class="bar-row"><span class="bar-label">workclass</span><span class="track"><span class="fill accent" style="display:block;width:54.8%"></span></span><span class="bar-value">5,57%</span></div>
+            <div class="bar-row"><span class="bar-label">native_country</span><span class="track"><span class="fill accent" style="display:block;width:.8%;min-width:3px"></span></span><span class="bar-value">0,08%</span></div>
+          </div>
+          <div class="card">
+            <h3>Decisões tomadas</h3>
+            <ul>
+              <li><code>?</code> e o placeholder inválido foram convertidos em valores ausentes.</li>
+              <li>As categorias ausentes são imputadas como <code>Missing</code>, preservando informação potencial.</li>
+              <li>Foram removidas 65 duplicatas exatas, equivalentes a 0,20% da base.</li>
+              <li>A separação treino/teste foi estratificada para preservar a proporção do target.</li>
+            </ul>
+            <div class="callout"><strong>Prevenção de vazamento:</strong> os transformadores são ajustados somente no conjunto de treino e posteriormente aplicados ao teste.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultados">
+      <div class="container">
+        <p class="section-label">Principais resultados</p>
+        <h2>Padrões associados à renda</h2>
+        <p class="lead">As comparações representam associações presentes nessa amostra. Elas não demonstram causalidade e não devem ser usadas para atribuir características intrínsecas aos grupos.</p>
+
+        <div class="chart">
+          <div class="chart-head"><div><h3>Distribuição da variável-alvo</h3><p>Base limpa, após remoção das duplicatas</p></div><span class="legend">n = 31.882</span></div>
+          <div class="bar-row"><span class="bar-label">&lt;=50K</span><span class="track"><span class="fill" style="display:block;width:75.93%"></span></span><span class="bar-value">75,93%</span></div>
+          <div class="bar-row"><span class="bar-label">&gt;50K</span><span class="track"><span class="fill accent" style="display:block;width:24.07%"></span></span><span class="bar-value">24,07%</span></div>
+          <p class="axis-note">Uma acurácia isolada pode ser enganosa: prever sempre a classe majoritária já produziria 75,93%.</p>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px">
+          <div class="chart">
+            <div class="chart-head"><div><h3>Taxa de renda &gt;50K por idade</h3><p>Dados de treino</p></div><span class="legend">percentual</span></div>
+            <div class="bar-row"><span class="bar-label">17–29</span><span class="track"><span class="fill green" style="display:block;width:13.6%"></span></span><span class="bar-value">5,23%</span></div>
+            <div class="bar-row"><span class="bar-label">30–39</span><span class="track"><span class="fill green" style="display:block;width:70.8%"></span></span><span class="bar-value">27,14%</span></div>
+            <div class="bar-row"><span class="bar-label">40–49</span><span class="track"><span class="fill green" style="display:block;width:96.4%"></span></span><span class="bar-value">36,98%</span></div>
+            <div class="bar-row"><span class="bar-label">50–59</span><span class="track"><span class="fill green" style="display:block;width:100%"></span></span><span class="bar-value">38,36%</span></div>
+            <div class="bar-row"><span class="bar-label">60+</span><span class="track"><span class="fill green" style="display:block;width:64.8%"></span></span><span class="bar-value">24,84%</span></div>
+          </div>
+
+          <div class="chart">
+            <div class="chart-head"><div><h3>Taxa de renda &gt;50K por escolaridade</h3><p>Categorias selecionadas · dados de treino</p></div><span class="legend">percentual</span></div>
+            <div class="bar-row"><span class="bar-label">HS-grad</span><span class="track"><span class="fill accent" style="display:block;width:20.8%"></span></span><span class="bar-value">16,10%</span></div>
+            <div class="bar-row"><span class="bar-label">Some-college</span><span class="track"><span class="fill accent" style="display:block;width:24.6%"></span></span><span class="bar-value">18,99%</span></div>
+            <div class="bar-row"><span class="bar-label">Bachelors</span><span class="track"><span class="fill accent" style="display:block;width:53.5%"></span></span><span class="bar-value">41,37%</span></div>
+            <div class="bar-row"><span class="bar-label">Masters</span><span class="track"><span class="fill accent" style="display:block;width:72.7%"></span></span><span class="bar-value">56,16%</span></div>
+            <div class="bar-row"><span class="bar-label">Prof-school</span><span class="track"><span class="fill accent" style="display:block;width:96.6%"></span></span><span class="bar-value">74,61%</span></div>
+            <div class="bar-row"><span class="bar-label">Doctorate</span><span class="track"><span class="fill accent" style="display:block;width:100%"></span></span><span class="bar-value">77,26%</span></div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px">
+          <article class="card">
+            <h3>Variáveis numéricas</h3>
+            <p>A mediana de idade é maior no grupo <code>&gt;50K</code>, assim como a escolaridade numérica. As distribuições de <code>fnlwgt</code> são semelhantes entre as classes, indicando baixo poder de separação isolado.</p>
+          </article>
+          <article class="card">
+            <h3>Atributos sensíveis</h3>
+            <p>No treino, a taxa observada foi 10,86% para mulheres e 30,63% para homens. Também surgiram diferenças entre grupos raciais, mas amostras menores geram estimativas mais instáveis. Esses resultados exigem leitura histórica e social, não causal.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt" id="pca">
+      <div class="container">
+        <p class="section-label">Redução de dimensionalidade</p>
+        <h2>O que o PCA preservou?</h2>
+        <p class="lead">As três variáveis numéricas foram imputadas, transformadas quando necessário e padronizadas. O PCA então as resumiu em duas componentes para permitir a visualização bidimensional.</p>
+
+        <div class="pca-layout">
+          <div class="donut" role="img" aria-label="As duas componentes preservam 68,7% da variância"></div>
+          <div>
+            <div class="component"><strong>PC1 · 36,5%</strong><br>Combina principalmente maior idade e escolaridade em oposição ao peso amostral transformado.</div>
+            <div class="component"><strong>PC2 · 32,2%</strong><br>É dominada pela escolaridade; <code>education_num</code> responde por aproximadamente 74,1% de sua composição quadrática.</div>
+            <div class="component"><strong>Leitura do gráfico</strong><br>As classes apresentam forte sobreposição. As variáveis numéricas capturam padrões associados à renda, mas não são suficientes para separar os grupos.</div>
+          </div>
+        </div>
+
+        <div class="callout"><strong>Por que o PCA ficou opcional no pipeline?</strong> Com apenas três variáveis numéricas pouco correlacionadas, reduzir de três para duas dimensões traz pouca economia e descarta cerca de 31,3% da variabilidade. A versão principal preserva as variáveis originais; uma variante com PCA foi mantida para comparação futura.</div>
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <div class="container">
+        <p class="section-label">Pré-processamento</p>
+        <h2>Um pipeline pronto para modelagem</h2>
+        <p class="lead">As escolhas foram conectadas aos achados da EDA e implementadas com <code>Pipeline</code> e <code>ColumnTransformer</code> do Scikit-learn.</p>
+
+        <div class="pipeline" aria-label="Etapas do pipeline">
+          <div class="step">Imputação</div>
+          <div class="step">log1p em fnlwgt</div>
+          <div class="step">Padronização</div>
+          <div class="step">One-Hot Encoding</div>
+          <div class="step">Matriz final</div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:32px">
+          <table>
+            <thead><tr><th>Desafio</th><th>Estratégia</th><th>Justificativa</th></tr></thead>
+            <tbody>
+              <tr><td>Valores ausentes categóricos</td><td>Categoria constante <code>Missing</code></td><td>Evita descartar aproximadamente 10% da base por causa de ocupação e preserva o sinal de ausência.</td></tr>
+              <tr><td>Outliers</td><td>Manutenção dos registros</td><td>Idades altas, escolaridades extremas e pesos amostrais elevados são plausíveis, não erros comprovados.</td></tr>
+              <tr><td>Assimetria de <code>fnlwgt</code></td><td><code>log1p</code></td><td>Reduz a influência da cauda direita antes da padronização.</td></tr>
+              <tr><td>Escalas numéricas</td><td><code>StandardScaler</code></td><td>Coloca idade, escolaridade e peso transformado em escalas comparáveis.</td></tr>
+              <tr><td>Categorias nominais</td><td>One-Hot Encoding</td><td>Não impõe uma ordem artificial e aceita categorias desconhecidas no teste.</td></tr>
+              <tr><td>Redundância educacional</td><td>Remover <code>education</code> do modelo</td><td><code>education</code> e <code>education_num</code> possuem correspondência exata 1:1.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="stats" style="margin-top:24px">
+          <div class="stat"><strong>25.505</strong><span>linhas no treino</span></div>
+          <div class="stat"><strong>6.377</strong><span>linhas no teste</span></div>
+          <div class="stat"><strong>89</strong><span>features no pipeline principal</span></div>
+          <div class="stat"><strong>0</strong><span>valores NaN após o pipeline</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt" id="conclusoes">
+      <div class="container">
+        <p class="section-label">Conclusões</p>
+        <h2>O que levamos para a próxima fase</h2>
+        <p class="lead">A EDA mostrou que renda está associada a múltiplas dimensões e que nenhuma variável numérica isolada explica suficientemente o target.</p>
+
+        <div class="conclusion">
+          <h3>Síntese executiva</h3>
+          <ul>
+            <li>O target é desbalanceado; métricas como precisão, recall, F1 e ROC-AUC deverão acompanhar a acurácia.</li>
+            <li>Escolaridade e idade apresentam associação relevante com renda, enquanto <code>fnlwgt</code> tem função principalmente amostral.</li>
+            <li>As variáveis categóricas acrescentam informação importante e justificam o One-Hot Encoding.</li>
+            <li>O pipeline evita vazamento e pode ser conectado diretamente a classificadores nas próximas etapas.</li>
+            <li>Qualquer uso preditivo deverá avaliar desempenho entre grupos e riscos de reprodução de vieses.</li>
+          </ul>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px">
+          <article class="card"><h3>Limitações</h3><p>A base representa um contexto populacional e histórico específico; associações não são causais. Categorias com poucas observações têm maior incerteza, e a faixa de renda simplifica um fenômeno contínuo.</p></article>
+          <article class="card"><h3>Próximos passos</h3><p>Comparar modelos com e sem PCA, testar o uso de <code>fnlwgt</code> como peso amostral, selecionar métricas adequadas ao desbalanceamento e realizar análise de equidade dos resultados.</p></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <p><strong>Adult Income EDA</strong><br>Projeto acadêmico · Insper · 2025.1</p>
+      <p>Gabriel Martins Rosa<br>João Pedro Baungartner</p>
+    </div>
+  </footer>
+</body>
+</html>

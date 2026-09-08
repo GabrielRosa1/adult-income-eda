@@ -86,12 +86,6 @@ O notebook tenta localizar `adult_income.csv` no ambiente. Quando necessário, t
 - Google Colab
 - GitHub Pages
 
-## Limitações e uso responsável
-
-Os resultados descrevem associações encontradas na base e não demonstram causalidade. Atributos como sexo e raça são sensíveis e refletem fatores sociais, históricos e econômicos presentes nos dados. Modelos treinados com essa base podem reproduzir desigualdades existentes e, portanto, precisam ser avaliados com critérios de justiça e responsabilidade.
-
-O atributo `fnlwgt` representa um peso amostral estimado e não o valor ou a importância de uma pessoa.
-
 ## Autores
 
 - Gabriel Martins Rosa
