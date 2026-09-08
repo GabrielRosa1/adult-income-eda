@@ -12,11 +12,11 @@
       --paper: #ffffff;
       --surface: #f5f7fb;
       --line: #dfe5ee;
-      --accent: #d7194a;
-      --accent-dark: #a90f37;
-      --blue: #315f88;
-      --green: #24866a;
-      --orange: #db7c26;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --blue: #2f6690;
+      --green: #2a9d8f;
+      --orange: #e07a5f;
       --shadow: 0 14px 40px rgba(23, 32, 51, 0.09);
       --radius: 18px;
     }
@@ -70,9 +70,9 @@
       position: relative;
       padding: 92px 0 78px;
       background:
-        radial-gradient(circle at 82% 28%, rgba(215, 25, 74, .18), transparent 26%),
-        radial-gradient(circle at 72% 82%, rgba(49, 95, 136, .16), transparent 26%),
-        linear-gradient(135deg, #121a2b 0%, #202d46 100%);
+        radial-gradient(circle at 82% 28%, rgba(42, 157, 143, .22), transparent 26%),
+        radial-gradient(circle at 72% 82%, rgba(47, 102, 144, .22), transparent 26%),
+        linear-gradient(135deg, #10232d 0%, #1b3a46 100%);
       color: white;
     }
     .hero::after {
@@ -99,7 +99,7 @@
       letter-spacing: .08em;
       text-transform: uppercase;
     }
-    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #ff4d79; }
+    .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #5eead4; }
     h1 { max-width: 790px; margin: 0; font-size: clamp(2.6rem, 6vw, 5.2rem); line-height: 1.02; letter-spacing: -.055em; }
     .hero p { max-width: 720px; margin: 26px 0 0; color: #cfd7e6; font-size: 1.16rem; }
     .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
@@ -116,7 +116,7 @@
     }
     .button:hover { color: white; transform: translateY(-1px); }
     .button.primary { border-color: var(--accent); background: var(--accent); }
-    .button.primary:hover { background: #eb2458; }
+    .button.primary:hover { background: #138b81; }
     .hero-meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 38px; color: #aeb9cb; font-size: .92rem; }
 
     section { padding: 78px 0; }
@@ -179,7 +179,7 @@
       border-left: 5px solid var(--accent);
       border-radius: 9px;
       color: #3f4b5c;
-      background: #fff1f5;
+      background: #ecfdf9;
     }
     .callout strong { color: var(--ink); }
 
@@ -209,6 +209,39 @@
     .component { margin-top: 15px; padding: 17px; border: 1px solid var(--line); border-radius: 13px; background: white; }
     .component strong { color: var(--accent); }
 
+    .figure-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      gap: 20px;
+      margin-top: 28px;
+    }
+    .figure-stack { display: grid; gap: 22px; margin-top: 28px; }
+    .figure-card {
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+    .figure-card img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: white;
+    }
+    .figure-card.compact img {
+      width: min(100%, 620px);
+      margin-inline: auto;
+    }
+    .figure-card figcaption {
+      padding: 18px 21px 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .94rem;
+    }
+    .figure-card figcaption strong { display: block; margin-bottom: 3px; color: var(--ink); }
+
     .pipeline {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -237,6 +270,7 @@
       .nav-links { display: none; }
       .stats { grid-template-columns: repeat(2, 1fr); }
       .grid-3 { grid-template-columns: 1fr; }
+      .figure-grid { grid-template-columns: 1fr; }
       .pca-layout { grid-template-columns: 1fr; }
       .pipeline { grid-template-columns: 1fr; }
       .step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -20px; transform: translateX(50%); }
@@ -260,6 +294,7 @@
       <div class="nav-links">
         <a href="#dados">Dados</a>
         <a href="#qualidade">Qualidade</a>
+        <a href="#exploracao">Exploração</a>
         <a href="#resultados">Resultados</a>
         <a href="#pca">PCA</a>
         <a href="#pipeline">Pipeline</a>
@@ -358,6 +393,25 @@
       </div>
     </section>
 
+    <section id="exploracao">
+      <div class="container">
+        <p class="section-label">Exploração univariada e bivariada</p>
+        <h2>Como as variáveis numéricas se distribuem</h2>
+        <p class="lead">Os gráficos originais do notebook evidenciam a concentração das idades adultas, a natureza discreta da escolaridade e a forte assimetria à direita do peso amostral.</p>
+
+        <div class="figure-grid">
+          <figure class="figure-card">
+            <img src="assets/distribuicoes-numericas.png" alt="Histogramas de idade, peso amostral fnlwgt e nível educacional">
+            <figcaption><strong>Distribuições das variáveis numéricas</strong>A cauda longa de <code>fnlwgt</code> sustenta o uso de <code>log1p</code>; <code>education_num</code> aparece em níveis inteiros de 1 a 16.</figcaption>
+          </figure>
+          <figure class="figure-card compact">
+            <img src="assets/correlacao-numericas.png" alt="Matriz de correlação entre idade, fnlwgt e education_num">
+            <figcaption><strong>Correlação linear</strong>As correlações variam de −0,08 a 0,04, sem evidência de multicolinearidade numérica.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
     <section id="resultados">
       <div class="container">
         <p class="section-label">Principais resultados</p>
@@ -402,6 +456,17 @@
             <p>No treino, a taxa observada foi 10,86% para mulheres e 30,63% para homens. Também surgiram diferenças entre grupos raciais, mas amostras menores geram estimativas mais instáveis. Esses resultados exigem leitura histórica e social, não causal.</p>
           </article>
         </div>
+
+        <div class="figure-stack">
+          <figure class="figure-card">
+            <img src="assets/categorias-renda.png" alt="Gráficos de taxa de renda superior a 50 mil dólares por escolaridade, sexo e raça">
+            <figcaption><strong>Categorias e renda anual</strong>A escolaridade apresenta a progressão mais evidente. Sexo e raça também mostram diferenças na amostra, que devem ser interpretadas como associações inseridas em um contexto social e histórico.</figcaption>
+          </figure>
+          <figure class="figure-card">
+            <img src="assets/boxplots-renda.png" alt="Boxplots de idade, escolaridade numérica e fnlwgt separados por faixa de renda">
+            <figcaption><strong>Variáveis numéricas por classe</strong>O grupo <code>&gt;50K</code> apresenta medianas maiores de idade e escolaridade. Já o peso amostral possui distribuições bastante semelhantes entre as classes.</figcaption>
+          </figure>
+        </div>
       </div>
     </section>
 
@@ -419,6 +484,11 @@
             <div class="component"><strong>Leitura do gráfico</strong><br>As classes apresentam forte sobreposição. As variáveis numéricas capturam padrões associados à renda, mas não são suficientes para separar os grupos.</div>
           </div>
         </div>
+
+        <figure class="figure-card" style="margin-top:28px">
+          <img src="assets/pca-numericas.png" alt="Projeção PCA das variáveis numéricas colorida pela faixa de renda anual">
+          <figcaption><strong>Projeção das duas primeiras componentes</strong>Os pontos de ambas as classes se sobrepõem amplamente. As faixas diagonais aparecem sobretudo porque <code>education_num</code> é discreta.</figcaption>
+        </figure>
 
         <div class="callout"><strong>Por que o PCA ficou opcional no pipeline?</strong> Com apenas três variáveis numéricas pouco correlacionadas, reduzir de três para duas dimensões traz pouca economia e descarta cerca de 31,3% da variabilidade. A versão principal preserva as variáveis originais; uma variante com PCA foi mantida para comparação futura.</div>
       </div>
